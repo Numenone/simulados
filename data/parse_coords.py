@@ -7,6 +7,14 @@ QHEAD_RE = re.compile(r'^\s*(\d{1,2})\s*[-–]\s+(.*)$', re.S)
 LANGNAME = {'ALEMAO': 'Alemão', 'ESPANHOL': 'Espanhol', 'FRANCES': 'Francês',
             'INGLES': 'Inglês', 'ITALIANO': 'Italiano', 'JAPONES': 'Japonês',
             'POLONES': 'Polonês'}
+# a new support text starts a fresh block: it must never be glued to the last
+# alternative of the question above it
+CTX_START = re.compile(
+    r'^\s*(o|os|a|as)\s+(texto|textos|imagem|imagens|gr[áa]fico|gr[áa]ficos|figura|figuras|'
+    r'quadro|tabela|charge|tirinha|mapa|poema|trecho|fragmento|excerto|infogr[áa]fico)s?'
+    r'|^\s*(leia|considere|observe|utilize|analise).{0,80}(a seguir|abaixo|refer[êe]ncia)',
+    re.I)
+
 SUBJ = {'MATEMATICA': 'Matemática', 'FISICA': 'Física', 'QUIMICA': 'Química',
         'BIOLOGIA': 'Biologia', 'GEOGRAFIA': 'Geografia', 'HISTORIA': 'História',
         'LINGUA PORTUGUESA': 'Português', 'PORTUGUES': 'Português',
@@ -106,23 +114,36 @@ def parse(src, year):
         stmt = [T[li]] + [T[k] for k in range(li + 1, first_alt)]
         stmt[0] = QHEAD_RE.match(stmt[0]).group(2)
 
+        # Where does the answer block really end? A wrapped alternative continues
+        # tightly spaced and indented like the alternatives; whatever follows the
+        # question (a support text for the next one, a footer) sits further left
+        # after a visible vertical gap. Without this the last alternative used to
+        # swallow everything up to the next question.
+        last = max(v[0] for v in alt_at.values())
+        opt_x0 = min(C[v[0]]['x0'] for v in alt_at.values())
+        tail = last
+        for k in range(last + 1, end):
+            c = C[k]
+            if c['pg'] != C[tail]['pg']:
+                break
+            if c['y0'] - C[tail]['y1'] > 13:
+                break
+            if c['x0'] < opt_x0 - 4:
+                break
+            if CTX_START.match(c['t']):
+                break
+            tail = k
+        ends[si] = tail
+
         order = sorted(alt_at.items(), key=lambda kv: kv[1][0])
         opts = {}
         correct = None
         for oi, (L, (j, isc, txt)) in enumerate(order):
-            nxt_j = order[oi + 1][1][0] if oi + 1 < len(order) else end
+            nxt_j = order[oi + 1][1][0] if oi + 1 < len(order) else tail + 1
             body = [txt] + [T[k] for k in range(j + 1, nxt_j) if not ALT_RE.match(T[k])]
             opts[L] = clean(' '.join(body))
             if isc:
                 correct = L
-
-        last = max(v[0] for v in alt_at.values())
-        tail = last
-        for k in range(last + 1, end):
-            if C[k]['pg'] != C[last]['pg'] or C[k]['y0'] - C[tail]['y1'] > 30:
-                break
-            tail = k
-        ends[si] = tail
         pstart = ends.get(si - 1, li - 1) + 1 if si > 0 else 0
 
         mk = None
