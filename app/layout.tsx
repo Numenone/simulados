@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/Nav";
@@ -15,10 +15,9 @@ export const metadata: Metadata = {
   description:
     "Simulado interativo com questões reais dos vestibulares da UFPR (2012–2026), no formato de fase única.",
   applicationName: "Simulado UFPR",
-  themeColor: "#080a0f",
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   themeColor: "#080a0f",
   width: "device-width",
   initialScale: 1,
