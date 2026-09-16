@@ -1,0 +1,24 @@
+node_modules
+.next
+out
+.vercel
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+
+# pipeline intermediates (regenerable, ~200 MB)
+data/pdfs/
+data/txt/
+data/lines/
+data/raw_objetivas.json
+data/manifest.json
+data/cg2017.txt
+data/*.html
+# shipped copies live in public/data/
+data/questions.json
+data/discursivas.json
+data/redacoes.json
+
+.vercel
+__pycache__/
+*.pyc
